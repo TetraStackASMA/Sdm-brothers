@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | SDM Brothers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="checkout-container">
+        <header class="checkout-header" style="text-align: left; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+            <div>
+                <a href="index.html" style="text-decoration: none; color: inherit;">
+                    <h1>SDM Brothers <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); background: var(--bg-color); padding: 0.2rem 0.6rem; border-radius: 99px; vertical-align: middle;">Pharmacy & Wellness</span></h1>
+                </a>
+                <p>Secure Checkout</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="faq.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-question-circle"></i> FAQ Section</a>
+                <a href="index.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-store"></i> Back to Store</a>
+                <div class="auth-links-container"></div>
+            </div>
+        </header>
+        
+        <div class="checkout-grid">
+            <!-- Left Column: Checkout Form -->
+            <div class="checkout-form-section">
+                <h2>Customer Details</h2>
+                <form id="checkout-form">
+                    <div id="autofill-container" style="display: none; margin-bottom: 1.5rem; background: var(--primary-light); padding: 1rem; border-radius: 8px; border: 1px solid #34d399;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-weight: 600; font-size: 0.95rem;">
+                            <input type="checkbox" id="useSavedAddress" style="width: 18px; height: 18px; cursor: pointer;">
+                            <i class="fas fa-user-check" style="color: var(--primary);"></i> Use my saved profile details for delivery
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Delivery Address</label>
+                        <textarea id="address" name="address" rows="3" placeholder="Apartment, Studio, or Floor, City, Pincode" required></textarea>
+                    </div>
+
+                    <h2>Store Selection</h2>
+                    <p class="section-desc">Choose the nearest store location for delivery</p>
+                    <div class="form-group">
+                        <label for="storeLocation">Nearest Store</label>
+                        <select id="storeLocation" name="storeLocation" required>
+                            <option value="" disabled selected>Select a store...</option>
+                            <option value="7204954221">Medpolo Ram Murthy Nagar</option>
+                            <option value="8123228221">SDM Brothers Varanasi Road Ram Murthy Nagar</option>
+                            <option value="9740854221">SDM Brothers Kithganur</option>
+                            <option value="7353374221">SDM Brothers Chemist Banaswadi</option>
+                            <option value="8904627221">SDM Brothers Hiranandalli</option>
+                            <option value="9036674221">SDM Brothers Bile Shivalaya</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="whatsapp-btn">
+                        <i class="fab fa-whatsapp"></i> Place Order on WhatsApp
+                    </button>
+                    <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 1rem;">
+                        * Note: A discount of <strong>5% up to 20%</strong> may be applicable depending on the selected products. Final discounted total will be confirmed by the pharmacist.
+                    </p>
+                </form>
+            </div>
+
+            <!-- Right Column: Order Summary -->
+            <div class="order-summary-section">
+                <h2>Order Summary</h2>
+                <div class="cart-items" id="cart-items">
+                    <!-- Cart items populated by JS -->
+                </div>
+                
+                <div class="cart-totals">
+                    <div class="total-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">₹0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Delivery Fee</span>
+                        <span>To be calculated</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>Total</span>
+                        <span id="grand-total">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

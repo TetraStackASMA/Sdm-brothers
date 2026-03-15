@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDM Brothers | Online Pharmacy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">SDM Brothers <span class="tag">Pharmacy & Wellness</span></div>
+            <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+                <a href="faq.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-question-circle"></i> FAQ Section</a>
+                <div class="auth-links-container"></div>
+                <div class="cart-icon" onclick="window.location.href='checkout.html'">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Search Section -->
+    <section class="hero-search">
+        <h1>What are you looking for?</h1>
+        <p class="hero-subtitle">Browse 500+ medicines & healthcare products from trusted brands</p>
+        <div class="hero-search-bar">
+            <i class="fas fa-search hero-search-icon"></i>
+            <input type="text" id="search-input" placeholder="Search medicines, health products...">
+            <select id="sort-select">
+                <option value="default">Sort By</option>
+                <option value="asc">A → Z</option>
+                <option value="desc">Z → A</option>
+                <option value="price_asc">Price: Low → High</option>
+            </select>
+        </div>
+    </section>
+
+    <!-- Horizontal Categories -->
+    <nav class="categories-bar">
+        <ul id="category-list" class="category-pills">
+            <li class="active" data-cat="All">All Products</li>
+            <!-- JS populated categories -->
+        </ul>
+    </nav>
+
+    <!-- Product Catalog -->
+    <section class="catalog-section">
+        <div class="catalog-header">
+            <h2 id="current-category-title">All Products</h2>
+            <div class="product-count" id="product-count">0 products found</div>
+        </div>
+        <div class="products-grid" id="products-container">
+            <!-- JS populated products -->
+        </div>
+    </section>
+    
+    <!-- Promotional SEO Section -->
+    <div class="promo-section-container">
+        
+        <!-- 1. Best Online Medicine Store in India -->
+        <div class="info-row">
+            <div class="info-content">
+                <h2>Best Online Medicine Store in India</h2>
+                <p>Welcome to your trusted online medicine store in India. We are dedicated to providing a wide range of authentic medicines and healthcare products right to your doorstep. Our platform ensures that you have access to everything you need for a healthy life.</p>
+                <p>We provide a comprehensive selection of products, including:</p>
+                <ul>
+                    <li><strong>OTC Medicines</strong> for immediate relief</li>
+                    <li><strong>Vitamins & Supplements</strong> to boost immunity</li>
+                    <li><strong>Hygiene Products</strong> for personal wellness</li>
+                    <li><strong>Baby Care Products</strong> for your little ones</li>
+                    <li><strong>Self-care Products</strong> for daily grooming</li>
+                    <li><strong>Pet Supplies</strong> to keep your furry friends healthy</li>
+                </ul>
+                <p><strong>Quality Assurance:</strong> All our medicines are sourced directly from trusted brands and certified manufacturers. You can rest assured you are receiving safe and high-quality products. Furthermore, our <strong>Pharmacist-On-Call service</strong> is always available to answer your prescription queries and provide expert guidance.</p>
+            </div>
+            <div class="info-image">
+                <i class="fas fa-prescription-bottle-medical"></i>
+            </div>
+        </div>
+    
+        <!-- 3. Easy and Quick Delivery & 5. Why Choose Us -->
+        <div class="info-row" style="flex-direction: row-reverse;">
+            <div class="info-content">
+                <h2>Easy & Quick Online Medicine Delivery</h2>
+                <p>We understand the importance of timely access to medication. That’s why we offer fast, reliable delivery through our wide partner network available across many cities in India, including <strong>same-day delivery options</strong> for urgent needs.</p>
+                
+                <h3 style="margin-top: 2.5rem; color: var(--primary-color);">Why Choose Us?</h3>
+                <ul>
+                    <li><strong>Reliable Delivery:</strong> Track your order from our store to your door.</li>
+                    <li><strong>Quality Assurance:</strong> 100% genuine products from trusted manufacturers.</li>
+                    <li><strong>Responsive Support:</strong> 24/7 Customer support via Phone or WhatsApp.</li>
+                    <li><strong>Affordable Pricing:</strong> Transparent pricing with regular discounts.</li>
+                </ul>
+            </div>
+            <div class="info-image">
+                <i class="fas fa-truck-fast"></i>
+            </div>
+        </div>
+    
+        <!-- 4. Extra Benefits Section (FAQ Style / Accordion) -->
+        <div class="faq-section" id="faq-section">
+            <div class="faq-header">
+                <h2>Extra Benefits of Online Ordering</h2>
+            </div>
+            
+            <div class="faq-item">
+                <button class="faq-question">
+                    Ultimate Convenience
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-answer">
+                    Order medicines from the comfort of your home. Whether it's raining outside or you're unwell, your medication is just a click away, arriving right at your doorstep.
+                </div>
+            </div>
+    
+            <div class="faq-item">
+                <button class="faq-question">
+                    24×7 Platform Availability
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-answer">
+                    Our digital storefront never closes. You can browse, verify prescriptions, and place orders at any hour of the day or night that suits your schedule.
+                </div>
+            </div>
+    
+            <div class="faq-item">
+                <button class="faq-question">
+                    Wide Product Selection
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-answer">
+                    Beyond just prescriptions, access an immense catalog of healthcare, wellness, and personal care products that might not all fit in a physical retail store.
+                </div>
+            </div>
+    
+            <div class="faq-item">
+                <button class="faq-question">
+                    Detailed Product Information
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-answer">
+                    Every product page includes comprehensive details about usage instructions, potential side effects, contraindications, and active ingredients to keep you fully informed.
+                </div>
+            </div>
+    
+            <div class="faq-item">
+                <button class="faq-question">
+                    Secure Payment Options
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-answer">
+                    Pay the way you prefer. We support highly secure payment gateways including Credit/Debit Cards, UPI, Mobile Wallets, and Cash on Delivery (COD).
+                </div>
+            </div>
+        </div>
+    
+    </div>
+
+    <!-- Toast for add to cart notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Product Details Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="products.js"></script>
+    <script src="script.js"></script>
+
+    <!-- JavaScript for FAQ Interactivity -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', () => {
+                    const answer = question.nextElementSibling;
+                    const isActive = question.classList.contains('active');
+                    
+                    // Close all other FAQs
+                    faqQuestions.forEach(q => {
+                        q.classList.remove('active');
+                        q.nextElementSibling.style.maxHeight = null;
+                        q.nextElementSibling.classList.remove('active');
+                    });
+                    
+                    // Toggle current FAQ
+                    if (!isActive) {
+                        question.classList.add('active');
+                        answer.classList.add('active');
+                        answer.style.maxHeight = answer.scrollHeight + "px";
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

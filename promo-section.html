@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About SDM Brothers Pharmacy</title>
+    <!-- Use the existing style.css from the project, but we'll include specific styles here for the component -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ==========================================================
+           SDM Brothers Pharmacy - Promotional & SEO Section Styles
+           ========================================================== */
+        
+        :root {
+            --primary-color: #00766c;       /* Medicine Green */
+            --secondary-color: #f1faee;     /* Soft Mint Background */
+            --accent-color: #e63946;        /* Alert/Call to Action Red */
+            --text-dark: #1d3557;           /* Deep Blue Text */
+            --text-light: #457b9d;          /* Light Blue-Grey Text */
+            --white: #ffffff;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            --transition: all 0.3s ease;
+        }
+
+        .promo-section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .promo-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .promo-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .promo-header p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Feature Cards Grid (Reasons & Benefits) */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .feature-card {
+            background: var(--white);
+            padding: 2.5rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border-top: 5px solid var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        /* Informational Row (Best Store & Delivery) */
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin-bottom: 4rem;
+            align-items: center;
+        }
+
+        .info-content {
+            flex: 1 1 500px;
+        }
+
+        .info-content h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .info-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .info-content ul li {
+            margin-bottom: 0.8rem;
+            position: relative;
+            padding-left: 2rem;
+            color: var(--text-light);
+            font-size: 1.05rem;
+        }
+
+        .info-content ul li::before {
+            content: '\f058'; /* Check-circle icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: 2px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .info-image {
+            flex: 1 1 400px;
+            background: var(--secondary-color);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .info-image i {
+            font-size: 8rem;
+            color: var(--primary-color);
+            opacity: 0.8;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .faq-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .faq-header h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        .faq-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-question {
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0;
+            font-family: inherit;
+        }
+
+        .faq-question i {
+            color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .faq-question.active i {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            color: var(--text-light);
+            margin-top: 0;
+        }
+
+        .faq-answer.active {
+            margin-top: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .promo-header h2 {
+                font-size: 2rem;
+            }
+            .info-content h2 {
+                font-size: 1.7rem;
+            }
+            .faq-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- You can copy everything inside .promo-section-container into your index.html -->
+
+<div class="promo-section-container">
+    
+    <!-- 1. Best Online Medicine Store in India -->
+    <div class="info-row">
+        <div class="info-content">
+            <h2>Best Online Medicine Store in India</h2>
+            <p>Welcome to your trusted online medicine store in India. We are dedicated to providing a wide range of authentic medicines and healthcare products right to your doorstep. Our platform ensures that you have access to everything you need for a healthy life.</p>
+            <p>We provide a comprehensive selection of products, including:</p>
+            <ul>
+                <li><strong>OTC Medicines</strong> for immediate relief</li>
+                <li><strong>Vitamins & Supplements</strong> to boost immunity</li>
+                <li><strong>Hygiene Products</strong> for personal wellness</li>
+                <li><strong>Baby Care Products</strong> for your little ones</li>
+                <li><strong>Self-care Products</strong> for daily grooming</li>
+                <li><strong>Pet Supplies</strong> to keep your furry friends healthy</li>
+            </ul>
+            <p><strong>Quality Assurance:</strong> All our medicines are sourced directly from trusted brands and certified manufacturers. You can rest assured you are receiving safe and high-quality products. Furthermore, our <strong>Pharmacist-On-Call service</strong> is always available to answer your prescription queries and provide expert guidance.</p>
+        </div>
+        <div class="info-image">
+            <i class="fas fa-prescription-bottle-medical"></i>
+        </div>
+    </div>
+
+    <!-- 2. Reasons to Buy Medicine Online -->
+    <div class="promo-header">
+        <h2>Reasons to Buy Medicine Online</h2>
+        <p>Experience the modern way of managing your healthcare needs with our digital pharmacy platform.</p>
+    </div>
+    
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-tags"></i></div>
+            <h3>Competitive Pricing</h3>
+            <p>Enjoy affordable pricing and regular discounts on all your essential medicines and healthcare products. We make healthcare accessible for everyone.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-clock"></i></div>
+            <h3>24×7 Availability</h3>
+            <p>Order medicines anytime, day or night. No more searching for nearby medical stores or waiting in long pharmacy queues.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+            <h3>Scheduled Reminders</h3>
+            <p>Never miss a dose again. Receive automated reminders for your prescription refills and regular daily medication schedules.</p>
+        </div>
+    </div>
+
+    <!-- 3. Easy and Quick Delivery & 5. Why Choose Us -->
+    <div class="info-row" style="flex-direction: row-reverse;">
+        <div class="info-content">
+            <h2>Easy & Quick Online Medicine Delivery</h2>
+            <p>We understand the importance of timely access to medication. That’s why we offer fast, reliable delivery through our wide partner network available across many cities in India, including <strong>same-day delivery options</strong> for urgent needs.</p>
+            
+            <h3 style="margin-top: 2.5rem; color: var(--primary-color);">Why Choose Us?</h3>
+            <ul>
+                <li><strong>Reliable Delivery:</strong> Track your order from our store to your door.</li>
+                <li><strong>Quality Assurance:</strong> 100% genuine products from trusted manufacturers.</li>
+                <li><strong>Responsive Support:</strong> 24/7 Customer support via Phone or WhatsApp.</li>
+                <li><strong>Affordable Pricing:</strong> Transparent pricing with regular discounts.</li>
+            </ul>
+        </div>
+        <div class="info-image">
+            <i class="fas fa-truck-fast"></i>
+        </div>
+    </div>
+
+    <!-- 4. Extra Benefits Section (FAQ Style / Accordion) -->
+    <div class="faq-section">
+        <div class="faq-header">
+            <h2>Extra Benefits of Online Ordering</h2>
+        </div>
+        
+        <div class="faq-item">
+            <button class="faq-question">
+                Ultimate Convenience
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+                Order medicines from the comfort of your home. Whether it's raining outside or you're unwell, your medication is just a click away, arriving right at your doorstep.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                24×7 Platform Availability
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+                Our digital storefront never closes. You can browse, verify prescriptions, and place orders at any hour of the day or night that suits your schedule.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Wide Product Selection
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+                Beyond just prescriptions, access an immense catalog of healthcare, wellness, and personal care products that might not all fit in a physical retail store.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Detailed Product Information
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+                Every product page includes comprehensive details about usage instructions, potential side effects, contraindications, and active ingredients to keep you fully informed.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Secure Payment Options
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+                Pay the way you prefer. We support highly secure payment gateways including Credit/Debit Cards, UPI, Mobile Wallets, and Cash on Delivery (COD).
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- JavaScript for FAQ Interactivity -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                const answer = question.nextElementSibling;
+                const isActive = question.classList.contains('active');
+                
+                // Close all other FAQs
+                faqQuestions.forEach(q => {
+                    q.classList.remove('active');
+                    q.nextElementSibling.style.maxHeight = null;
+                    q.nextElementSibling.classList.remove('active');
+                });
+                
+                // Toggle current FAQ
+                if (!isActive) {
+                    question.classList.add('active');
+                    answer.classList.add('active');
+                    answer.style.maxHeight = answer.scrollHeight + "px";
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

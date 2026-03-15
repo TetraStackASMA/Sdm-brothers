@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SDM Brothers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <a href="index.html" class="auth-logo">
+            <i class="fas fa-stethoscope"></i> SDM Brothers
+        </a>
+        
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login">Login</button>
+                <button class="auth-tab" id="tab-register">Register</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="form-login" class="auth-form active">
+                <h2 style="margin-bottom: 1.5rem; text-align: center;">Welcome Back</h2>
+                
+                <div class="form-group">
+                    <label for="loginPhone">Phone Number</label>
+                    <input type="tel" id="loginPhone" name="phone" placeholder="10-digit mobile number" required pattern="[0-9]{10}" title="Please enter a valid 10-digit numeric phone number." oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                </div>
+
+                <!-- Password omitted for simplicity as OTP is typical, but we'll stick to a simple form submission for the prototype -->
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">Login</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="form-register" class="auth-form">
+                <h2 style="margin-bottom: 1.5rem; text-align: center;">Create an Account</h2>
+                
+                <div class="form-group">
+                    <label for="regName">Full Name <span style="color:red">*</span></label>
+                    <input type="text" id="regName" name="name" placeholder="John Doe" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPhone">Phone Number <span style="color:red">*</span></label>
+                    <input type="tel" id="regPhone" name="phone" placeholder="10-digit mobile number" required pattern="[0-9]{10}" title="Please enter exactly 10 numeric digits." oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regDob">Date of Birth <span style="color:red">*</span></label>
+                    <input type="date" id="regDob" name="dob" required>
+                    <span class="file-hint" style="display:block; margin-top:0.4rem; color: #b91c1c;"><i class="fas fa-exclamation-triangle"></i> You must be 18 or older to purchase medicines.</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regAddress">Delivery Address <span style="color:red">*</span></label>
+                    <textarea id="regAddress" name="address" rows="3" placeholder="Street, Area, City, Postal Code" required></textarea>
+                    <span class="file-hint" style="display:block; margin-top:0.4rem; color: #047857;"><i class="fas fa-info-circle"></i> This address will be used for delivery during checkout.</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regStore">Preferred Closest Store <span style="color:red">*</span></label>
+                    <select id="regStore" name="storeLocation" required>
+                        <option value="" disabled selected>Select a store...</option>
+                        <option value="7204954221">Medpolo Ram Murthy Nagar</option>
+                        <option value="8123228221">SDM Brothers Varanasi Road Ram Murthy Nagar</option>
+                        <option value="9740854221">SDM Brothers Kithganur</option>
+                        <option value="7353374221">SDM Brothers Chemist Banaswadi</option>
+                        <option value="8904627221">SDM Brothers Hiranandalli</option>
+                        <option value="9036674221">SDM Brothers Bile Shivalaya</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">Create Account</button>
+            </form>
+            
+            <div id="auth-success-msg" class="alert-box success" style="display: none; margin-top: 1.5rem; text-align: center; background: #d1fae5; color: #065f46; border-left: 4px solid #10b981;">
+                <i class="fas fa-check-circle"></i> <span>Success! Logging you in...</span>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- Script handling strictly auth logic -->
+    <script src="auth.js"></script>
+</body>
+</html>

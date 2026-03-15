@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | SDM Brothers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50">
+    <header class="main-header">
+        <div class="header-container">
+            <a href="index.html" style="text-decoration: none;">
+                <div class="logo">SDM Brothers <span class="tag">Online Pharmacy</span></div>
+            </a>
+            <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
+                <a href="prescription.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-user-nurse"></i> Ask Pharmacist</a>
+                <a href="index.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-store"></i> Back to Store</a>
+                <div class="cart-icon" onclick="window.location.href='checkout.html'">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="profile-container" style="max-width: 800px; margin: 3rem auto; padding: 0 1.5rem;">
+        <div class="profile-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1><i class="fas fa-user-circle" style="color:var(--primary)"></i> My Profile</h1>
+            <button id="logout-btn" class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+
+        <div class="profile-card" style="background: var(--card-bg); padding: 2.5rem; border-radius: var(--radius); box-shadow: var(--shadow);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <h2 style="font-size: 1.25rem;">Personal Information</h2>
+                <button type="button" id="edit-profile-btn" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-edit"></i> Edit Profile</button>
+            </div>
+            
+            <form id="profile-form">
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="profileName">Full Name</label>
+                    <input type="text" id="profileName" name="name" required>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="profilePhone">Phone Number</label>
+                    <input type="tel" id="profilePhone" name="phone" required pattern="[0-9]{10}" title="Please enter exactly 10 numeric digits." oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label for="profileAddress">Saved Delivery Address</label>
+                    <textarea id="profileAddress" name="address" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="profileStore">Preferred Closest Store</label>
+                    <select id="profileStore" name="storeLocation" required>
+                        <option value="7204954221">Medpolo Ram Murthy Nagar</option>
+                        <option value="8123228221">SDM Brothers Varanasi Road Ram Murthy Nagar</option>
+                        <option value="9740854221">SDM Brothers Kithganur</option>
+                        <option value="7353374221">SDM Brothers Chemist Banaswadi</option>
+                        <option value="8904627221">SDM Brothers Hiranandalli</option>
+                        <option value="9036674221">SDM Brothers Bile Shivalaya</option>
+                    </select>
+                </div>
+
+                <div id="save-actions" style="display: none; align-items: center; gap: 1.5rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">Save Changes</button>
+                    <button type="button" id="cancel-edit-btn" class="btn btn-outline" style="padding: 0.8rem 2rem;">Cancel</button>
+                    <div id="profile-success-msg" style="display: none; color: #10b981; font-weight: 500;">
+                        <i class="fas fa-check-circle"></i> Profile updated successfully!
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Separate script tag to immediately initialize cart count from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const cart = JSON.parse(localStorage.getItem('sdm_cart')) || [];
+            const countSpan = document.getElementById('cart-count');
+            if (countSpan) {
+                countSpan.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+            }
+        });
+    </script>
+</body>
+</html>
