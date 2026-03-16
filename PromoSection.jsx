@@ -48,7 +48,7 @@ const PromoSection = () => {
                         <li><strong>Self-care Products</strong> for daily grooming</li>
                         <li><strong>Pet Supplies</strong> to keep your furry friends healthy</li>
                     </ul>
-                    <p><strong>Quality Assurance:</strong> All our medicines are sourced directly from trusted brands and certified manufacturers. You can rest assured you are receiving safe and high-quality products. Furthermore, our <strong>Pharmacist-On-Call service</strong> is always available to answer your prescription queries and provide expert guidance.</p>
+                    <p><strong>Quality Assurance:</strong> All our medicines are sourced directly from trusted brands and certified manufacturers. You can rest assured you are receiving safe and high-quality products.</p>
                 </div>
                 <div className="info-image">
                     <i className="fas fa-prescription-bottle-medical"></i>
