@@ -17,15 +17,6 @@ const app    = express();
 app.use(cors());
 app.use(express.json());
 
-// ── Initialise SQLite database ──────────────────────────────
-const { initDatabase } = require('./database');
-
-// ── Mount the SQLite-backed DB API router ───────────────────
-// All /api/auth, /api/user, /api/stores, /api/medicines,
-// /api/cart, and /api/orders routes are handled here.
-const dbApi = require('./db-api');
-app.use('/api', dbApi);
-
 // ── OpenAI client ───────────────────────────────────────────
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -62,18 +53,10 @@ app.post('/api/chatbot', async (req, res) => {
 });
 
 // ============================================================
-// START SERVER  (after DB is ready)
+// START SERVER
 // ============================================================
 const PORT = process.env.PORT || 5000;
 
-initDatabase()
-    .then(() => {
-        app.listen(PORT, () => {
-            console.log(`✅ SDM Brothers Pharmacy API running on http://localhost:${PORT}`);
-            console.log(`   Database: pharmacy.db (SQLite via sql.js — auto-created on first run)`);
-        });
-    })
-    .catch(err => {
-        console.error('❌ Failed to initialise database:', err);
-        process.exit(1);
-    });
+app.listen(PORT, () => {
+    console.log(`✅ SDM Brothers Pharmacy API running on http://localhost:${PORT}`);
+});

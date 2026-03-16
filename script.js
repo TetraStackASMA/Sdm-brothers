@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            cart.forEach(item => {
+            cart.forEach((item, index) => {
                 const itemTotal = item.price * item.quantity;
                 totalAmount += itemTotal;
 
@@ -263,7 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemEl.innerHTML = `
                     <div class="item-info">
                         <span class="item-name">${item.name}</span>
-                        <span class="item-qty">Qty: ${item.quantity}</span>
+                        <div class="item-controls" style="display: flex; align-items: center; gap: 0.8rem; margin-top: 0.4rem;">
+                            <button class="btn btn-qty" onclick="updateCartItemQuantity(${item.id}, -1)" style="padding: 2px 8px; font-size: 0.9rem;">-</button>
+                            <span class="item-qty">${item.quantity}</span>
+                            <button class="btn btn-qty" onclick="updateCartItemQuantity(${item.id}, 1)" style="padding: 2px 8px; font-size: 0.9rem;">+</button>
+                            <button class="btn btn-remove" onclick="removeFromCart(${item.id})" style="color: #ef4444; background: none; border: none; font-size: 0.8rem; cursor: pointer; margin-left: 0.5rem;"><i class="fas fa-trash"></i> Remove</button>
+                        </div>
                     </div>
                     <div class="item-price">₹${itemTotal.toLocaleString('en-IN')}</div>
                 `;
@@ -273,6 +278,27 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('subtotal').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
             document.getElementById('grand-total').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
         }
+
+        window.updateCartItemQuantity = function(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    localStorage.setItem('sdm_cart', JSON.stringify(cart));
+                    renderCartPage();
+                    updateCartCount();
+                }
+            }
+        };
+
+        window.removeFromCart = function(id) {
+            cart = cart.filter(i => i.id !== id);
+            localStorage.setItem('sdm_cart', JSON.stringify(cart));
+            renderCartPage();
+            updateCartCount();
+        };
 
         renderCartPage();
 

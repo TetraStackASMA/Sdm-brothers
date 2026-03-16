@@ -6,6 +6,16 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     ? 'http://localhost:5000/api'
     : '/api';
 
+// Helper to get all users from localStorage
+function getLocalUsers() {
+    return JSON.parse(localStorage.getItem('sdm_users')) || [];
+}
+
+// Helper to save users to localStorage
+function saveLocalUsers(users) {
+    localStorage.setItem('sdm_users', JSON.stringify(users));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- LOGIN / REGISTER PAGE LOGIC ---
@@ -55,34 +65,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const payload = {
-                name: formData.get('name').trim(),
-                phone_number: formData.get('phone').trim(),
-                address: formData.get('address').trim(),
-                preferred_store: formData.get('storeLocation')
-            };
+            const phone = formData.get('phone').trim();
+            const name = formData.get('name').trim();
+            const address = formData.get('address').trim();
+            const store = formData.get('storeLocation');
 
             try {
                 btn.textContent = 'Creating account...';
                 btn.disabled = true;
 
-                const response = await fetch(`${API_BASE}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Registration failed.');
+                // Local DB Check
+                const users = getLocalUsers();
+                if (users.find(u => u.phone === phone)) {
+                    throw new Error('A user with this phone number already exists.');
                 }
 
-                // Success!
-                // Map API field 'phone_number' back to frontend 'phone' for compatibility
-                const profile = { ...data.user, phone: data.user.phone_number };
-                localStorage.setItem('sdm_user_profile', JSON.stringify(profile));
-                localStorage.setItem('sdm_auth_token', data.token);
+                const newUser = {
+                    user_id: Date.now(),
+                    name,
+                    phone,
+                    address,
+                    preferred_store: store
+                };
+
+                users.push(newUser);
+                saveLocalUsers(users);
+
+                // Log in automatically
+                localStorage.setItem('sdm_user_profile', JSON.stringify(newUser));
+                localStorage.setItem('sdm_auth_token', `local_token_${newUser.user_id}`);
 
                 showAuthSuccess('Account created successfully! Redirecting...');
             } catch (err) {
@@ -103,22 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.textContent = 'Logging in...';
                 btn.disabled = true;
 
-                const response = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone_number: phone })
-                });
+                // Local DB Check
+                const users = getLocalUsers();
+                const user = users.find(u => u.phone === phone);
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Login failed.');
+                if (!user) {
+                    throw new Error('No account found. Please register first.');
                 }
 
                 // Success!
-                const profile = { ...data.user, phone: data.user.phone_number };
-                localStorage.setItem('sdm_user_profile', JSON.stringify(profile));
-                localStorage.setItem('sdm_auth_token', data.token);
+                localStorage.setItem('sdm_user_profile', JSON.stringify(user));
+                localStorage.setItem('sdm_auth_token', `local_token_${user.user_id}`);
 
                 showAuthSuccess('Login successful! Redirecting...');
             } catch (err) {
@@ -212,20 +218,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 btn.disabled = true;
-                const response = await fetch(`${API_BASE}/user/profile`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(updatedData)
-                });
-
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Update failed.');
 
                 // Update local storage
-                const newProfile = { ...data.user, phone: data.user.phone_number };
+                const users = getLocalUsers();
+                const userIndex = users.findIndex(u => u.phone === savedProfile.phone);
+                
+                if (userIndex === -1) throw new Error('User not found in local database.');
+
+                users[userIndex] = { ...users[userIndex], ...updatedData };
+                saveLocalUsers(users);
+
+                // Update active profile
+                const newProfile = users[userIndex];
                 localStorage.setItem('sdm_user_profile', JSON.stringify(newProfile));
                 savedProfile = newProfile;
                 
