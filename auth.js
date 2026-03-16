@@ -169,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             setFormEditMode(false);
             updateHeaderAuthUI();
+            if (typeof updateContactUsUI === 'function') updateContactUsUI();
         });
 
         const logoutBtn = document.getElementById('logout-btn');
@@ -182,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GLOBAL AUTH UI UPDATE (Headers) ---
     updateHeaderAuthUI();
+    updateContactUsUI();
 
     function updateHeaderAuthUI() {
         const authToken = localStorage.getItem('sdm_auth_token');
@@ -201,6 +203,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Logged Out
                 container.innerHTML = `
                     <a href="login.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-user"></i> Login / Sign Up</a>
+                `;
+            }
+        });
+    }
+
+    function updateContactUsUI() {
+        const authToken = localStorage.getItem('sdm_auth_token');
+        const savedProfile = JSON.parse(localStorage.getItem('sdm_user_profile'));
+        const contactContainers = document.querySelectorAll('.contact-us-container');
+        
+        const storeDetails = {
+            "7204954221": "Medpolo Ram Murthy Nagar",
+            "8123228221": "SDM Bros Varanasi Road",
+            "9740854221": "SDM Bros Kithganur",
+            "7353374221": "SDM Bros Chemist Banaswadi",
+            "8904627221": "SDM Bros Hiranandalli",
+            "9036674221": "SDM Bros Bile Shivalaya"
+        };
+
+        contactContainers.forEach(container => {
+            if (authToken && savedProfile && savedProfile.storeLocation) {
+                // Logged In -> Show only selected store as a click-to-call button
+                const storeName = storeDetails[savedProfile.storeLocation] || 'Preferred Store';
+                container.innerHTML = `
+                    <a href="tel:${savedProfile.storeLocation}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" title="Call Store">
+                        <i class="fas fa-phone-alt"></i> <span class="desktop-only">${storeName}</span>
+                    </a>
+                `;
+            } else {
+                // Not Logged In -> Show dropdown of all stores
+                let optionsHtml = '<option value="" disabled selected>📞 Contact Us</option>';
+                for (const [phone, name] of Object.entries(storeDetails)) {
+                    optionsHtml += `<option value="${phone}">${name}</option>`;
+                }
+                
+                container.innerHTML = `
+                    <select class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; appearance: auto; cursor: pointer; max-width: 170px; text-overflow: ellipsis;" onchange="if(this.value) window.location.href='tel:'+this.value;">
+                        ${optionsHtml}
+                    </select>
                 `;
             }
         });
