@@ -34,7 +34,7 @@ function requireAuth(req, res, next) {
  * POST /api/auth/register
  * Body: { name, phone_number, address, preferred_store }
  */
-router.post('/auth/register', (req, res) => {
+router.post('/auth/register', async (req, res) => {
     try {
         const { name, phone_number, address, preferred_store } = req.body;
 
@@ -46,12 +46,12 @@ router.post('/auth/register', (req, res) => {
         }
 
         // Check for duplicate phone
-        const existing = DB.getUserByPhone(phone_number);
+        const existing = await DB.getUserByPhone(phone_number);
         if (existing) {
             return res.status(409).json({ error: 'A user with this phone number already exists.' });
         }
 
-        const user  = DB.createUser({ name, phone_number, address, preferred_store });
+        const user  = await DB.createUser({ name, phone_number, address, preferred_store });
         const token = `token_${user.user_id}_${Date.now()}`;
 
         res.status(201).json({ success: true, user, token });
@@ -65,14 +65,14 @@ router.post('/auth/register', (req, res) => {
  * POST /api/auth/login
  * Body: { phone_number }
  */
-router.post('/auth/login', (req, res) => {
+router.post('/auth/login', async (req, res) => {
     try {
         const { phone_number } = req.body;
         if (!phone_number) {
             return res.status(400).json({ error: 'phone_number is required.' });
         }
 
-        const user = DB.getUserByPhone(phone_number);
+        const user = await DB.getUserByPhone(phone_number);
         if (!user) {
             return res.status(404).json({ error: 'No account found. Please register first.' });
         }
@@ -89,20 +89,24 @@ router.post('/auth/login', (req, res) => {
  * GET /api/user/profile
  * Headers: Authorization: Bearer token_<id>_<ts>
  */
-router.get('/user/profile', requireAuth, (req, res) => {
-    const user = DB.getUserById(req.userId);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    res.json({ success: true, user });
+router.get('/user/profile', requireAuth, async (req, res) => {
+    try {
+        const user = await DB.getUserById(req.userId);
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
 });
 
 /**
  * PUT /api/user/profile
  * Body: { name?, address?, preferred_store? }
  */
-router.put('/user/profile', requireAuth, (req, res) => {
+router.put('/user/profile', requireAuth, async (req, res) => {
     try {
         const { name, address, preferred_store } = req.body;
-        const updated = DB.updateUser(req.userId, { name, address, preferred_store });
+        const updated = await DB.updateUser(req.userId, { name, address, preferred_store });
         if (!updated) return res.status(404).json({ error: 'User not found.' });
         res.json({ success: true, user: updated });
     } catch (err) {
@@ -115,9 +119,13 @@ router.put('/user/profile', requireAuth, (req, res) => {
  * DELETE /api/user/profile
  * Permanently deletes account and all associated orders.
  */
-router.delete('/user/profile', requireAuth, (req, res) => {
-    DB.deleteUser(req.userId);
-    res.json({ success: true, message: 'Account deleted.' });
+router.delete('/user/profile', requireAuth, async (req, res) => {
+    try {
+        await DB.deleteUser(req.userId);
+        res.json({ success: true, message: 'Account deleted.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete account' });
+    }
 });
 
 // ============================================================
@@ -128,17 +136,26 @@ router.delete('/user/profile', requireAuth, (req, res) => {
  * GET /api/stores
  * Returns all pharmacy store locations.
  */
-router.get('/stores', (_req, res) => {
-    res.json({ success: true, stores: DB.getAllStores() });
+router.get('/stores', async (_req, res) => {
+    try {
+        const stores = await DB.getAllStores();
+        res.json({ success: true, stores });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch stores' });
+    }
 });
 
 /**
  * GET /api/stores/:id
  */
-router.get('/stores/:id', (req, res) => {
-    const store = DB.getStoreById(parseInt(req.params.id, 10));
-    if (!store) return res.status(404).json({ error: 'Store not found.' });
-    res.json({ success: true, store });
+router.get('/stores/:id', async (req, res) => {
+    try {
+        const store = await DB.getStoreById(parseInt(req.params.id, 10));
+        if (!store) return res.status(404).json({ error: 'Store not found.' });
+        res.json({ success: true, store });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch store' });
+    }
 });
 
 // ============================================================
@@ -149,28 +166,36 @@ router.get('/stores/:id', (req, res) => {
  * GET /api/medicines
  * Query params: ?category=Pain+Relief   ?search=paracetamol
  */
-router.get('/medicines', (req, res) => {
-    const { category, search } = req.query;
-    const medicines = DB.getMedicines({ category, search });
-    res.json({ success: true, count: medicines.length, medicines });
+router.get('/medicines', async (req, res) => {
+    try {
+        const { category, search } = req.query;
+        const medicines = await DB.getMedicines({ category, search });
+        res.json({ success: true, count: medicines.length, medicines });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch medicines' });
+    }
 });
 
 /**
  * GET /api/medicines/:id
  */
-router.get('/medicines/:id', (req, res) => {
-    const med = DB.getMedicineById(parseInt(req.params.id, 10));
-    if (!med) return res.status(404).json({ error: 'Medicine not found.' });
-    res.json({ success: true, medicine: med });
+router.get('/medicines/:id', async (req, res) => {
+    try {
+        const med = await DB.getMedicineById(parseInt(req.params.id, 10));
+        if (!med) return res.status(404).json({ error: 'Medicine not found.' });
+        res.json({ success: true, medicine: med });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch medicine' });
+    }
 });
 
 /**
  * POST /api/medicines  (Admin: add new product)
  * Body: { name, category, description, price, stock_quantity, image_url, prescription_required }
  */
-router.post('/medicines', (req, res) => {
+router.post('/medicines', async (req, res) => {
     try {
-        const med = DB.createMedicine(req.body);
+        const med = await DB.createMedicine(req.body);
         res.status(201).json({ success: true, medicine: med });
     } catch (err) {
         console.error('[create medicine]', err.message);
@@ -182,11 +207,11 @@ router.post('/medicines', (req, res) => {
  * PATCH /api/medicines/:id/stock  (Admin: adjust stock)
  * Body: { delta: <positive or negative integer> }
  */
-router.patch('/medicines/:id/stock', (req, res) => {
+router.patch('/medicines/:id/stock', async (req, res) => {
     try {
         const { delta } = req.body;
         if (typeof delta !== 'number') return res.status(400).json({ error: 'delta must be a number.' });
-        const med = DB.updateMedicineStock(parseInt(req.params.id, 10), delta);
+        const med = await DB.updateMedicineStock(parseInt(req.params.id, 10), delta);
         res.json({ success: true, medicine: med });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -202,25 +227,29 @@ router.patch('/medicines/:id/stock', (req, res) => {
  * Validates cart items against live stock before checkout.
  * Body: { items: [{ medicine_id, quantity }] }
  */
-router.post('/cart/validate', (req, res) => {
-    const { items } = req.body;
-    if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'Cart is empty.' });
-    }
-
-    const results = items.map(item => {
-        const med = DB.getMedicineById(item.medicine_id);
-        if (!med) return { medicine_id: item.medicine_id, valid: false, reason: 'Product not found.' };
-        if (med.stock_quantity < item.quantity) {
-            return { medicine_id: item.medicine_id, name: med.name, valid: false,
-                     reason: `Only ${med.stock_quantity} in stock.`, available: med.stock_quantity };
+router.post('/cart/validate', async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Cart is empty.' });
         }
-        return { medicine_id: item.medicine_id, name: med.name, price: med.price,
-                 prescription_required: !!med.prescription_required, valid: true };
-    });
 
-    const allValid = results.every(r => r.valid);
-    res.json({ success: allValid, results });
+        const results = await Promise.all(items.map(async (item) => {
+            const med = await DB.getMedicineById(item.medicine_id);
+            if (!med) return { medicine_id: item.medicine_id, valid: false, reason: 'Product not found.' };
+            if (med.stock_quantity < item.quantity) {
+                return { medicine_id: item.medicine_id, name: med.name, valid: false,
+                         reason: `Only ${med.stock_quantity} in stock.`, available: med.stock_quantity };
+            }
+            return { medicine_id: item.medicine_id, name: med.name, price: med.price,
+                     prescription_required: !!med.prescription_required, valid: true };
+        }));
+
+        const allValid = results.every(r => r.valid);
+        res.json({ success: allValid, results });
+    } catch (err) {
+        res.status(500).json({ error: 'Validation failed' });
+    }
 });
 
 // ============================================================
@@ -232,7 +261,7 @@ router.post('/cart/validate', (req, res) => {
  * Create a new order (requires login).
  * Body: { store_id, delivery_address, items: [{ medicine_id, quantity }] }
  */
-router.post('/orders', requireAuth, (req, res) => {
+router.post('/orders', requireAuth, async (req, res) => {
     try {
         const { store_id, delivery_address, items } = req.body;
 
@@ -240,10 +269,10 @@ router.post('/orders', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'store_id, delivery_address, and items[] are required.' });
         }
 
-        const store = DB.getStoreById(store_id);
+        const store = await DB.getStoreById(store_id);
         if (!store) return res.status(404).json({ error: 'Store not found.' });
 
-        const order = DB.createOrder(
+        const order = await DB.createOrder(
             { user_id: req.userId, store_id, delivery_address },
             items
         );
@@ -259,29 +288,37 @@ router.post('/orders', requireAuth, (req, res) => {
  * GET /api/orders
  * Retrieve order history for the logged-in user.
  */
-router.get('/orders', requireAuth, (req, res) => {
-    const orders = DB.getOrdersByUser(req.userId);
-    res.json({ success: true, count: orders.length, orders });
+router.get('/orders', requireAuth, async (req, res) => {
+    try {
+        const orders = await DB.getOrdersByUser(req.userId);
+        res.json({ success: true, count: orders.length, orders });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch orders' });
+    }
 });
 
 /**
  * GET /api/orders/:id
  * Single order detail.
  */
-router.get('/orders/:id', requireAuth, (req, res) => {
-    const order = DB.getOrderById(parseInt(req.params.id, 10));
-    if (!order) return res.status(404).json({ error: 'Order not found.' });
-    if (order.user_id !== req.userId) return res.status(403).json({ error: 'Forbidden.' });
-    res.json({ success: true, order });
+router.get('/orders/:id', requireAuth, async (req, res) => {
+    try {
+        const order = await DB.getOrderById(parseInt(req.params.id, 10));
+        if (!order) return res.status(404).json({ error: 'Order not found.' });
+        if (order.user_id !== req.userId) return res.status(403).json({ error: 'Forbidden.' });
+        res.json({ success: true, order });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch order' });
+    }
 });
 
 /**
  * PATCH /api/orders/:id/status  (Admin: update status)
  * Body: { order_status: 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' }
  */
-router.patch('/orders/:id/status', (req, res) => {
+router.patch('/orders/:id/status', async (req, res) => {
     try {
-        const order = DB.updateOrderStatus(parseInt(req.params.id, 10), req.body.order_status);
+        const order = await DB.updateOrderStatus(parseInt(req.params.id, 10), req.body.order_status);
         res.json({ success: true, order });
     } catch (err) {
         res.status(400).json({ error: err.message });

@@ -27,7 +27,12 @@ const dbApi = require('./db-api');
 app.use('/api', dbApi);
 
 // ── OpenAI client ───────────────────────────────────────────
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openaiApiKey = process.env.OPENAI_API_KEY;
+const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null;
+
+if (!openai) {
+    console.warn('⚠️  Warning: OPENAI_API_KEY is missing. Chatbot features will be disabled.');
+}
 
 // ============================================================
 // AI PHARMACIST CHATBOT
@@ -36,6 +41,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // ============================================================
 app.post('/api/chatbot', async (req, res) => {
     try {
+        if (!openai) {
+            return res.status(503).json({ error: 'Chatbot service not configured. Please add OPENAI_API_KEY.' });
+        }
+
         const { message, context } = req.body;
         if (!message) return res.status(400).json({ error: 'message is required.' });
 
@@ -70,7 +79,7 @@ initDatabase()
     .then(() => {
         app.listen(PORT, () => {
             console.log(`✅ SDM Brothers Pharmacy API running on http://localhost:${PORT}`);
-            console.log(`   Database: pharmacy.db (SQLite via sql.js — auto-created on first run)`);
+            console.log(`   Database: Neon/Vercel PostgreSQL (Connected)`);
         });
     })
     .catch(err => {
