@@ -1,5 +1,10 @@
 // auth.js
-// Handles user authentication and profile management via localStorage
+// Handles user authentication and profile management via real DB API
+// Falls back to mock if API is unavailable.
+
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : '/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -26,8 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Register Submit
-        formRegister.addEventListener('submit', (e) => {
+        formRegister.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = formRegister.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            
             const formData = new FormData(formRegister);
             
             // Age Verification
@@ -42,39 +50,81 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (age < 18) {
-                    alert('You must be at least 18 years old to create an account and purchase medicines.');
-                    return; // block registration
+                    alert('You must be at least 18 years old to create an account.');
+                    return;
                 }
             }
 
-            const userProfile = {
+            const payload = {
                 name: formData.get('name').trim(),
-                phone: formData.get('phone').trim(),
-                dob: dobString,
+                phone_number: formData.get('phone').trim(),
                 address: formData.get('address').trim(),
-                storeLocation: formData.get('storeLocation')
+                preferred_store: formData.get('storeLocation')
             };
 
-            // Save to LocalStorage simulating DB Session
-            localStorage.setItem('sdm_user_profile', JSON.stringify(userProfile));
-            localStorage.setItem('sdm_auth_token', 'mock_token_123'); // Simulate logged in state
+            try {
+                btn.textContent = 'Creating account...';
+                btn.disabled = true;
 
-            showAuthSuccess('Account created successfully! Redirecting...');
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Registration failed.');
+                }
+
+                // Success!
+                // Map API field 'phone_number' back to frontend 'phone' for compatibility
+                const profile = { ...data.user, phone: data.user.phone_number };
+                localStorage.setItem('sdm_user_profile', JSON.stringify(profile));
+                localStorage.setItem('sdm_auth_token', data.token);
+
+                showAuthSuccess('Account created successfully! Redirecting...');
+            } catch (err) {
+                alert(err.message);
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         });
 
         // Login Submit
-        formLogin.addEventListener('submit', (e) => {
+        formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = formLogin.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
             const phone = document.getElementById('loginPhone').value.trim();
-            
-            // In a real app, this verifies against DB. Here we check if profile exists with this phone.
-            const savedProfile = JSON.parse(localStorage.getItem('sdm_user_profile'));
-            
-            if (savedProfile && savedProfile.phone === phone) {
-                localStorage.setItem('sdm_auth_token', 'mock_token_123');
+
+            try {
+                btn.textContent = 'Logging in...';
+                btn.disabled = true;
+
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: phone })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed.');
+                }
+
+                // Success!
+                const profile = { ...data.user, phone: data.user.phone_number };
+                localStorage.setItem('sdm_user_profile', JSON.stringify(profile));
+                localStorage.setItem('sdm_auth_token', data.token);
+
                 showAuthSuccess('Login successful! Redirecting...');
-            } else {
-                alert('No account found with this phone number. Please register first.');
+            } catch (err) {
+                alert(err.message);
+                btn.textContent = originalText;
+                btn.disabled = false;
             }
         });
     }
@@ -84,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
             authSuccessMsg.style.display = 'block';
             authSuccessMsg.querySelector('span').textContent = msg;
             setTimeout(() => {
-                // Redirect back to referring page or index
                 const redirectParams = new URLSearchParams(window.location.search);
                 const redirectTo = redirectParams.get('redirect') || 'index.html';
                 window.location.href = redirectTo;
@@ -95,16 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PROFILE PAGE LOGIC (profile.html) ---
     const profileForm = document.getElementById('profile-form');
     if (profileForm) {
-        const savedProfile = JSON.parse(localStorage.getItem('sdm_user_profile'));
+        let savedProfile = JSON.parse(localStorage.getItem('sdm_user_profile'));
         const authToken = localStorage.getItem('sdm_auth_token');
 
         if (!authToken || !savedProfile) {
-            // Not logged in
             window.location.href = 'login.html';
             return;
         }
 
-        // Populate fields and set readonly by default
         const inputs = [
             document.getElementById('profileName'),
             document.getElementById('profilePhone'),
@@ -119,9 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
         function setFormEditMode(isEditing) {
             inputs.forEach(input => {
                 if (isEditing) {
-                    input.removeAttribute('readonly');
-                    input.removeAttribute('disabled'); // for select
-                    input.classList.add('editing');
+                    // Phone is usually protected as ID
+                    if (input.id !== 'profilePhone') {
+                        input.removeAttribute('readonly');
+                        if (input.tagName === 'SELECT') input.removeAttribute('disabled');
+                        input.classList.add('editing');
+                    }
                 } else {
                     input.setAttribute('readonly', 'true');
                     if (input.tagName === 'SELECT') input.setAttribute('disabled', 'true');
@@ -137,45 +187,67 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('profileName').value = savedProfile.name;
             document.getElementById('profilePhone').value = savedProfile.phone;
             document.getElementById('profileAddress').value = savedProfile.address;
-            document.getElementById('profileStore').value = savedProfile.storeLocation;
+            document.getElementById('profileStore').value = savedProfile.preferred_store || savedProfile.storeLocation || '';
         }
 
         loadProfileData();
-        setFormEditMode(false); // start in read-only mode
+        setFormEditMode(false);
 
         editBtn.addEventListener('click', () => setFormEditMode(true));
         
         cancelBtn.addEventListener('click', () => {
-            loadProfileData(); // revert
+            loadProfileData();
             setFormEditMode(false);
         });
 
-        profileForm.addEventListener('submit', (e) => {
+        profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const updatedProfile = {
+            const btn = profileForm.querySelector('button[type="submit"]');
+            
+            const updatedData = {
                 name: document.getElementById('profileName').value.trim(),
-                phone: document.getElementById('profilePhone').value.trim(),
                 address: document.getElementById('profileAddress').value.trim(),
-                storeLocation: document.getElementById('profileStore').value
+                preferred_store: document.getElementById('profileStore').value
             };
 
-            // Update in mock DB/session
-            Object.assign(savedProfile, updatedProfile);
-            localStorage.setItem('sdm_user_profile', JSON.stringify(updatedProfile));
-            
-            const successMsg = document.getElementById('profile-success-msg');
-            successMsg.style.display = 'block';
-            setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
-            
-            setFormEditMode(false);
-            updateHeaderAuthUI();
-            if (typeof updateContactUsUI === 'function') updateContactUsUI();
+            try {
+                btn.disabled = true;
+                const response = await fetch(`${API_BASE}/user/profile`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Update failed.');
+
+                // Update local storage
+                const newProfile = { ...data.user, phone: data.user.phone_number };
+                localStorage.setItem('sdm_user_profile', JSON.stringify(newProfile));
+                savedProfile = newProfile;
+                
+                const successMsg = document.getElementById('profile-success-msg');
+                successMsg.style.display = 'block';
+                setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
+                
+                setFormEditMode(false);
+                updateHeaderAuthUI();
+                updateContactUsUI();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+            }
         });
 
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 localStorage.removeItem('sdm_auth_token');
+                localStorage.removeItem('sdm_user_profile');
                 window.location.href = 'index.html';
             });
         }
@@ -192,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         authLinksContainers.forEach(container => {
             if (authToken && savedProfile) {
-                // Logged In
                 container.innerHTML = `
                     <a href="profile.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
                         <div class="user-avatar">${savedProfile.name.charAt(0).toUpperCase()}</div> 
@@ -200,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </a>
                 `;
             } else {
-                // Logged Out
                 container.innerHTML = `
                     <a href="login.html" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fas fa-user"></i> Login / Sign Up</a>
                 `;
@@ -223,16 +293,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         contactContainers.forEach(container => {
-            if (authToken && savedProfile && savedProfile.storeLocation) {
-                // Logged In -> Show only selected store as a click-to-call button
-                const storeName = storeDetails[savedProfile.storeLocation] || 'Preferred Store';
+            const storeLoc = savedProfile ? (savedProfile.preferred_store || savedProfile.storeLocation) : null;
+            if (authToken && savedProfile && storeLoc) {
+                const storeName = storeDetails[storeLoc] || 'Preferred Store';
                 container.innerHTML = `
-                    <a href="tel:${savedProfile.storeLocation}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" title="Call Store">
+                    <a href="tel:${storeLoc}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" title="Call Store">
                         <i class="fas fa-phone-alt"></i> <span class="desktop-only">${storeName}</span>
                     </a>
                 `;
             } else {
-                // Not Logged In -> Show dropdown of all stores
                 let optionsHtml = '<option value="" disabled selected>📞 Contact Us</option>';
                 for (const [phone, name] of Object.entries(storeDetails)) {
                     optionsHtml += `<option value="${phone}">${name}</option>`;
