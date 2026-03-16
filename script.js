@@ -1,53 +1,10 @@
 // script.js
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000/api'
-    : '/api';
-
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize cart from localStorage
     let cart = JSON.parse(localStorage.getItem('sdm_cart')) || [];
     
-    // Global data stores
-    let allMedicines = [];
-    let allStores = [];
-
-    // Helper to map DB medicine to Frontend product
-    function mapMedicine(m) {
-        return {
-            id: m.medicine_id,
-            name: m.name,
-            description: m.description,
-            category: m.category,
-            price: Number(m.price),
-            rating: 4.5 + (Math.random() * 0.5), // Simulate rating
-            image: m.image_url || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=80',
-            prescription_required: m.prescription_required
-        };
-    }
-
-    // Fetch Initial Data
-    try {
-        const [medRes, storeRes] = await Promise.all([
-            fetch(`${API_BASE}/medicines`),
-            fetch(`${API_BASE}/stores`)
-        ]);
-        
-        if (medRes.ok) {
-            const medData = await medRes.json();
-            allMedicines = medData.map(mapMedicine);
-        }
-        
-        if (storeRes.ok) {
-            allStores = await storeRes.json();
-        }
-    } catch (err) {
-        console.error('Failed to fetch store data:', err);
-        // Fallback to hardcoded products if global 'products' exists from products.js
-        if (typeof products !== 'undefined') allMedicines = products;
-    }
-
     // Update Cart Count in Header
     function updateCartCount() {
         const countSpan = document.getElementById('cart-count');
@@ -65,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const productsContainer = document.getElementById('products-container');
     const categoryList = document.getElementById('category-list');
     
-    if (productsContainer) {
+    if (productsContainer && typeof products !== 'undefined') {
         let currentCategory = 'All';
         let searchQuery = '';
         let sortOption = 'default';
@@ -89,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Populate Categories
-        const categories = [...new Set(allMedicines.map(p => p.category))].sort();
+        const categories = [...new Set(products.map(p => p.category))].sort();
         
         categories.forEach(cat => {
             const li = document.createElement('li');
@@ -105,26 +62,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         // Handle "All" category click
-        const allTab = document.querySelector('li[data-cat="All"]');
-        if (allTab) {
-            allTab.addEventListener('click', (e) => {
-                document.querySelectorAll('#category-list li').forEach(el => el.classList.remove('active'));
-                e.target.classList.add('active');
-                currentCategory = 'All';
-                renderProducts();
-            });
-        }
+        document.querySelector('li[data-cat="All"]').addEventListener('click', (e) => {
+            document.querySelectorAll('#category-list li').forEach(el => el.classList.remove('active'));
+            e.target.classList.add('active');
+            currentCategory = 'All';
+            renderProducts();
+        });
 
         // Add to Cart
         window.addToCart = function(productId, isFromPrescription = false) {
-            const product = allMedicines.find(p => p.id === productId);
+            const product = products.find(p => p.id === productId);
             if (!product) return;
             
-            // Prescription requirement blocker
-            if (!isFromPrescription && product.prescription_required === 1) {
-                alert(`⚠️ ${product.name} is a prescription-only medicine.\n\nPlease upload a prescription first.`);
-                return;
-            }
+            // Antibiotics disclaimer logic handled during checkout or on-card
 
             const existingItem = cart.find(item => item.id === productId);
             if (existingItem) {
@@ -147,24 +97,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.viewDetails = function(productId) {
             const modal = document.getElementById('product-modal');
             const modalBody = document.getElementById('modal-body');
-            const product = allMedicines.find(p => p.id === productId);
-            if (!product) return;
-
+            const product = products.find(p => p.id === productId);
+            
             const vis = getCategoryVisual(product.category);
             modalBody.innerHTML = `
                 <div class="modal-body-content">
-                    <div class="product-img-tile modal-tile" style="background: ${vis.grad};">
-                        <i class="fas ${vis.icon} product-tile-icon" style="font-size: 4rem;"></i>
-                    </div>
                     <div class="modal-info">
-                        <h2>${product.name}</h2>
                         <div class="product-cat">${product.category}</div>
-                        <div class="product-rating"><i class="fas fa-star"></i> ${product.rating.toFixed(1)} / 5.0</div>
+                        <h2>${product.name}</h2>
+                        <div class="product-rating"><i class="fas fa-star"></i> ${product.rating} / 5.0</div>
                         <div class="product-price" style="margin: 1rem 0;">₹${product.price.toLocaleString('en-IN')}</div>
-                        <p>${product.description}</p>
+                        <p style="color: var(--text-muted); line-height: 1.6;">${product.description}</p>
                         
                         <div class="btn-group" style="margin-top: 2rem;">
                             <button class="btn btn-primary" onclick="addToCart(${product.id}); document.getElementById('product-modal').style.display='none';">Add to Cart</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('product-modal').style.display='none';">Close</button>
                         </div>
                     </div>
                 </div>
@@ -175,14 +122,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Category → icon + gradient mapping
         function getCategoryVisual(category) {
             const map = {
-                'Pain Relief Medicines': { icon: 'fa-head-side-virus', grad: 'linear-gradient(135deg, #f97316, #fb923c)' },
-                'Cold and Flu Medicines': { icon: 'fa-wind', grad: 'linear-gradient(135deg, #38bdf8, #0ea5e9)' },
+                'Pain Relief': { icon: 'fa-head-side-virus', grad: 'linear-gradient(135deg, #f97316, #fb923c)' },
+                'Cold and Flu': { icon: 'fa-wind', grad: 'linear-gradient(135deg, #38bdf8, #0ea5e9)' },
                 'Digestive Health': { icon: 'fa-stomach', grad: 'linear-gradient(135deg, #a78bfa, #7c3aed)' },
-                'Skincare and Dermatology': { icon: 'fa-spa', grad: 'linear-gradient(135deg, #86efac, #16a34a)' },
+                'Vitamins and Supplements': { icon: 'fa-capsules', grad: 'linear-gradient(135deg, #facc15, #eab308)' },
                 'Antibiotics (Prescription Required)': { icon: 'fa-shield-virus', grad: 'linear-gradient(135deg, #f43f5e, #be123c)' },
                 'Diabetes Care': { icon: 'fa-droplet', grad: 'linear-gradient(135deg, #60a5fa, #2563eb)' },
-                'Heart Health': { icon: 'fa-heart-pulse', grad: 'linear-gradient(135deg, #f87171, #dc2626)' },
-                'Nutrition Supplements': { icon: 'fa-capsules', grad: 'linear-gradient(135deg, #facc15, #eab308)' },
+                'Heart and Blood Pressure': { icon: 'fa-heart-pulse', grad: 'linear-gradient(135deg, #f87171, #dc2626)' },
+                'Skin Care': { icon: 'fa-spa', grad: 'linear-gradient(135deg, #86efac, #16a34a)' },
+                'Eye Care': { icon: 'fa-eye', grad: 'linear-gradient(135deg, #5eead4, #0d9488)' },
+                'Ear Care': { icon: 'fa-ear-listen', grad: 'linear-gradient(135deg, #fda4af, #e11d48)' },
+                'Dental Care': { icon: 'fa-tooth', grad: 'linear-gradient(135deg, #c4b5fd, #6d28d9)' },
+                'Baby and Child Care': { icon: 'fa-baby', grad: 'linear-gradient(135deg, #fdba74, #ea580c)' },
+                'Women\'s Health': { icon: 'fa-venus', grad: 'linear-gradient(135deg, #f9a8d4, #db2777)' },
+                'Men\'s Health': { icon: 'fa-mars', grad: 'linear-gradient(135deg, #93c5fd, #1d4ed8)' },
+                'Respiratory': { icon: 'fa-lungs', grad: 'linear-gradient(135deg, #6ee7b7, #059669)' },
+                'Allergy': { icon: 'fa-allergies', grad: 'linear-gradient(135deg, #fcd34d, #d97706)' },
+                'Mental Health': { icon: 'fa-brain', grad: 'linear-gradient(135deg, #a5b4fc, #4338ca)' },
+                'Sleep Aids': { icon: 'fa-moon', grad: 'linear-gradient(135deg, #818cf8, #312e81)' },
+                'First Aid': { icon: 'fa-kit-medical', grad: 'linear-gradient(135deg, #fb7185, #be185d)' },
+                'Personal Care': { icon: 'fa-pump-soap', grad: 'linear-gradient(135deg, #34d399, #047857)' },
             };
             return map[category] || { icon: 'fa-pills', grad: 'linear-gradient(135deg, #10b981, #059669)' };
         }
@@ -206,8 +165,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             productsContainer.innerHTML = '';
             
             let filteredProducts = currentCategory === 'All' 
-                ? [...allMedicines] 
-                : allMedicines.filter(p => p.category === currentCategory);
+                ? [...products] 
+                : products.filter(p => p.category === currentCategory);
                 
             if (searchQuery) {
                 filteredProducts = filteredProducts.filter(p => 
@@ -228,18 +187,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('product-count').textContent = `${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''} found`;
             
             filteredProducts.forEach(product => {
+                const isAntibiotic = product.category === "Antibiotics (Prescription Required)";
                 const card = document.createElement('div');
                 card.className = 'product-card product-card-minimal';
                 card.innerHTML = `
                     <div class="product-content">
+                        <div class="product-cat">${product.category}</div>
                         <h3 class="product-title">${product.name}</h3>
+                        ${isAntibiotic ? '<div class="rx-disclaimer"><i class="fas fa-file-medical"></i> Prescription Required</div>' : ''}
                         <div class="product-price">₹${product.price.toLocaleString('en-IN')}</div>
-                        <p style="font-size: 0.8rem; color: #666; margin: 0.5rem 0; height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${product.description}</p>
-                        <button class="btn btn-primary" style="width:100%; margin-top:0.75rem;" onclick="addToCart(${product.id})">Add to Cart</button>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="addToCart(${product.id})">Add to Cart</button>
+                            <button class="btn btn-outline" onclick="viewDetails(${product.id})">Details</button>
+                        </div>
                     </div>
                 `;
                 productsContainer.appendChild(card);
             });
+
         }
         
         renderProducts();
@@ -255,7 +220,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast.innerHTML = `<i class="fas fa-check-circle" style="color:var(--primary)"></i> <span>${message}</span>`;
         
         toastContainer.appendChild(toast);
-        setTimeout(() => { toast.remove(); }, 3500);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3500);
     }
     
     // ============================================
@@ -263,25 +231,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     const checkoutForm = document.getElementById('checkout-form');
     if (checkoutForm) {
-        let totalAmount = 0;
+        const storeNames = {
+            "7204954221": "Medpolo Ram Murthy Nagar",
+            "8123228221": "SDM Brothers Varanasi Road Ram Murthy Nagar",
+            "9740854221": "SDM Brothers Kithganur",
+            "7353374221": "SDM Brothers Chemist Banaswadi",
+            "8904627221": "SDM Brothers Hiranandalli",
+            "9036674221": "SDM Brothers Bile Shivalaya"
+        };
 
-        // Populate Store Dropdown from DB
-        const storeSelect = document.getElementById('storeLocation');
-        if (storeSelect && allStores.length > 0) {
-            storeSelect.innerHTML = '<option value="" disabled selected>Select Nearest Store</option>';
-            allStores.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.store_id; // Use ID for DB, but keep phone for WhatsApp?
-                opt.textContent = `${s.store_name} (${s.city})`;
-                opt.dataset.phone = s.phone_number;
-                storeSelect.appendChild(opt);
-            });
-        }
+        let totalAmount = 0;
 
         function renderCartPage() {
             const cartItemsContainer = document.getElementById('cart-items');
-            if (!cartItemsContainer) return;
-
             cartItemsContainer.innerHTML = '';
             totalAmount = 0;
 
@@ -317,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const useSavedAddress = document.getElementById('useSavedAddress');
         const autofillContainer = document.getElementById('autofill-container');
         
+        // Show autofill option only if logged in
         const savedProfile = JSON.parse(localStorage.getItem('sdm_user_profile'));
         const authToken = localStorage.getItem('sdm_auth_token');
         
@@ -328,79 +291,78 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('fullName').value = savedProfile.name;
                     document.getElementById('phone').value = savedProfile.phone;
                     document.getElementById('address').value = savedProfile.address;
-                    // Try to match store ID
-                    if (savedProfile.preferred_store) {
-                        document.getElementById('storeLocation').value = savedProfile.preferred_store;
-                    }
+                    document.getElementById('storeLocation').value = savedProfile.storeLocation;
+                } else {
+                    document.getElementById('fullName').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('address').value = '';
+                    document.getElementById('storeLocation').value = '';
                 }
             });
         }
 
-        checkoutForm.addEventListener('submit', async (e) => {
+        checkoutForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const btn = checkoutForm.querySelector('button[type="submit"]');
             
             if (cart.length === 0) {
-                alert("Your cart is empty!");
+                alert("Your cart is empty! Please add items before checking out.");
+                window.location.href = "index.html";
                 return;
             }
 
-            const storeId = document.getElementById('storeLocation').value;
-            const selectedStore = allStores.find(s => s.store_id == storeId);
+            const formData = new FormData(checkoutForm);
+            const customerName = formData.get('fullName').trim();
+            const phoneNumber = formData.get('phone').trim();
+            const address = formData.get('address').trim();
+            const storePhone = formData.get('storeLocation');
             
-            if (!selectedStore) {
-                alert('Please select a store.');
+            if (!storePhone) {
+                alert('Please select a nearest store.');
                 return;
             }
 
-            try {
-                btn.textContent = 'Processing Order...';
-                btn.disabled = true;
+            const storeName = storeNames[storePhone];
 
-                // 1. Save to Database if logged in
-                let orderSuccess = false;
-                if (authToken && savedProfile) {
-                    const orderPayload = {
-                        user_id: savedProfile.user_id,
-                        store_id: storeId,
-                        delivery_address: document.getElementById('address').value.trim(),
-                        items: cart.map(item => ({
-                            medicine_id: item.id,
-                            quantity: item.quantity
-                        }))
-                    };
+            // Format Cart Items for WhatsApp
+            let orderDetails = '';
+            cart.forEach((item) => {
+                orderDetails += `• ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toLocaleString('en-IN')}\n`;
+            });
 
-                    const response = await fetch(`${API_BASE}/orders`, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${authToken}`
-                        },
-                        body: JSON.stringify(orderPayload)
-                    });
+            // Build the WhatsApp message
+            const message = 
+`*New Order from SDM Brothers!* 📦
 
-                    if (response.ok) orderSuccess = true;
-                }
+*Customer Details:*
+👤 Name: ${customerName}
+📞 Phone: ${phoneNumber}
+📍 Address: ${address}
 
-                // 2. Prepare WhatsApp Message
-                let orderDetails = '';
-                cart.forEach((item) => {
-                    orderDetails += `• ${item.name} (x${item.quantity}) - ₹${(item.price * item.quantity).toLocaleString('en-IN')}\n`;
-                });
+*Order Summary:*
+${orderDetails}
+*Total Amount:* ₹${totalAmount.toLocaleString('en-IN')}
 
-                const message = `*New Order from SDM Brothers!* 📦\n\n*Customer:* ${document.getElementById('fullName').value}\n*Phone:* ${document.getElementById('phone').value}\n*Address:* ${document.getElementById('address').value}\n\n*Summary:* \n${orderDetails}\n*Total:* ₹${totalAmount.toLocaleString('en-IN')}\n\n*Store:* ${selectedStore.store_name}`;
-                
-                const waUrl = `https://wa.me/91${selectedStore.phone_number}?text=${encodeURIComponent(message)}`;
-                
-                localStorage.removeItem('sdm_cart');
-                window.location.href = waUrl;
-            } catch (err) {
-                alert('Order failed to save to database, but you can still proceed via WhatsApp.');
-                console.error(err);
-                // Fallback to WhatsApp anyway
-                localStorage.removeItem('sdm_cart');
-                window.location.href = `https://wa.me/91${selectedStore.phone_number}?text=Order Failure Fallback`;
+*Selected Store Location:* 
+🏪 ${storeName}`;
+
+            // URL Encode the message
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Target phone processing
+            let targetPhone = storePhone;
+            targetPhone = targetPhone.replace(/[^0-9]/g, ''); // strip non-numeric
+            if (targetPhone.length === 10) {
+                targetPhone = '91' + targetPhone; // Default to India country code if 10 digits
             }
+
+            // WhatsApp redirect URL
+            const waUrl = `https://wa.me/${targetPhone}?text=${encodedMessage}`;
+            
+            // Clear cart upon successful order preparation
+            localStorage.removeItem('sdm_cart');
+            
+            // Redirect logic 
+            window.location.href = waUrl;
         });
     }
 

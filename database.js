@@ -1,288 +1,237 @@
 // database.js
 // ============================================================
-// PostgreSQL Serverless CRUD Layer for SDM Brothers Pharmacy
-// Uses: 'pg' package connecting to Vercel/Neon Postgres
+// SQLite CRUD Layer for SDM Brothers Pharmacy
+// Uses: Node.js built-in 'node:sqlite' (zero external dependencies)
+// ============================================================
+// Requires Node.js v22.5.0+ (the project is running Node v24+)
 // ============================================================
 
 'use strict';
 
-const { Pool } = require('pg');
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
 
-// The POSTGRES_URL is provided automatically by Vercel/Neon in production.
-// You must add it to a .env file for local development.
-require('dotenv').config();
-
-const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-
-const pool = new Pool({
-    connectionString: connectionString,
-    // If not on localhost, enforce SSL for cloud databases like Neon
-    ssl: connectionString && !connectionString.includes('localhost') 
-         ? { rejectUnauthorized: false } 
-         : false
-});
-
+const DB_PATH = path.join(__dirname, 'pharmacy.db');
 const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 const SEED_PATH = path.join(__dirname, 'seed.sql');
 
+// ── Initialise database ──────────────
+let db;
+try {
+    db = new DatabaseSync(DB_PATH);
+} catch (err) {
+    console.error('Failed to open database:', err);
+    process.exit(1);
+}
+
+// Enforce foreign keys
+db.exec('PRAGMA foreign_keys = ON');
+db.exec('PRAGMA journal_mode = WAL');
+
 // ── Apply Schema and Seed Data on first run ──
 async function initDatabase() {
-    try {
-        // Check if tables exist
-        const client = await pool.connect();
-        
-        try {
-            const result = await client.query(`
-                SELECT tablename 
-                FROM pg_catalog.pg_tables 
-                WHERE schemaname = 'public' AND tablename = 'stores';
-            `);
+    // Check if tables exist (e.g. check for 'stores' table)
+    const checkStmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='stores'");
+    const exists = checkStmt.get();
 
-            if (result.rowCount === 0) {
-                console.log('📦 Initialising new Postgres database schema...');
-                if (fs.existsSync(SCHEMA_PATH)) {
-                    await client.query(fs.readFileSync(SCHEMA_PATH, 'utf8'));
-                    console.log('✅ Schema applied.');
-                }
-
-                if (fs.existsSync(SEED_PATH)) {
-                    console.log('🌱 Inserting seed data...');
-                    await client.query(fs.readFileSync(SEED_PATH, 'utf8'));
-                    console.log('✅ Seed data inserted.');
-                }
-            } else {
-                console.log('📦 Connected to existing Postgres database.');
-            }
-        } finally {
-            client.release();
+    if (!exists) {
+        console.log('📦 Initialising new database schema...');
+        if (fs.existsSync(SCHEMA_PATH)) {
+            db.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+            console.log('✅ Schema applied.');
         }
-    } catch (err) {
-        console.error('Failed to initialise database:', err);
-        // Don't exit process on Vercel, just log it.
+
+        if (fs.existsSync(SEED_PATH)) {
+            console.log('🌱 Inserting seed data...');
+            db.exec(fs.readFileSync(SEED_PATH, 'utf8'));
+            console.log('✅ Seed data inserted.');
+        }
+    } else {
+        console.log('📦 Database loaded from pharmacy.db');
     }
+    
+    return db;
 }
 
 // ============================================================
 // USERS
 // ============================================================
 
-async function createUser({ name, phone_number, address, preferred_store = null }) {
-    // ---- DEMO DEPLOYMENT LIMIT: 25,000 Users ----
-    // If the database reaches 25,000 users, reset the users table to prevent overusing free tier resources.
-    // We protect user_id = 1 (the Admin/Demo account).
-    const countResult = await pool.query('SELECT COUNT(*) FROM users');
-    const userCount = parseInt(countResult.rows[0].count, 10);
-    
-    if (userCount >= 25000) {
-        console.log('User limit reached (25,000). Resetting user database (preserving admin account ID 1).');
-        await pool.query('DELETE FROM users WHERE user_id != 1');
-    }
-    // ---------------------------------------------
-
-    const result = await pool.query(`
+function createUser({ name, phone_number, address, preferred_store = null }) {
+    const stmt = db.prepare(`
         INSERT INTO users (name, phone_number, address, preferred_store)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-    `, [name, phone_number, address, preferred_store]);
-    return result.rows[0];
+        VALUES (?, ?, ?, ?)
+    `);
+    const info = stmt.run(name, phone_number, address, preferred_store);
+    return getUserById(info.lastInsertRowid);
 }
 
-async function getUserByPhone(phone_number) {
-    const result = await pool.query('SELECT * FROM users WHERE phone_number = $1', [phone_number]);
-    return result.rows[0] || null;
+function getUserByPhone(phone_number) {
+    return db.prepare('SELECT * FROM users WHERE phone_number = ?').get(phone_number);
 }
 
-async function getUserById(user_id) {
-    const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [user_id]);
-    return result.rows[0] || null;
+function getUserById(user_id) {
+    return db.prepare('SELECT * FROM users WHERE user_id = ?').get(user_id);
 }
 
-async function updateUser(user_id, { name, address, preferred_store }) {
-    const result = await pool.query(`
+function updateUser(user_id, { name, address, preferred_store }) {
+    db.prepare(`
         UPDATE users
-        SET name            = COALESCE($1, name),
-            address         = COALESCE($2, address),
-            preferred_store = COALESCE($3, preferred_store)
-        WHERE user_id = $4
-        RETURNING *
-    `, [name ?? null, address ?? null, preferred_store ?? null, user_id]);
-    return result.rows[0] || null;
+        SET name            = COALESCE(?, name),
+            address         = COALESCE(?, address),
+            preferred_store = COALESCE(?, preferred_store)
+        WHERE user_id = ?
+    `).run(name ?? null, address ?? null, preferred_store ?? null, user_id);
+    return getUserById(user_id);
 }
 
-async function deleteUser(user_id) {
-    await pool.query('DELETE FROM users WHERE user_id = $1', [user_id]);
-    return true;
+function deleteUser(user_id) {
+    return db.prepare('DELETE FROM users WHERE user_id = ?').run(user_id);
 }
 
 // ============================================================
 // STORES
 // ============================================================
 
-async function getAllStores() {
-    const result = await pool.query('SELECT * FROM stores ORDER BY city, store_name');
-    return result.rows;
+function getAllStores() {
+    return db.prepare('SELECT * FROM stores ORDER BY city, store_name').all();
 }
 
-async function getStoreById(store_id) {
-    const result = await pool.query('SELECT * FROM stores WHERE store_id = $1', [store_id]);
-    return result.rows[0] || null;
+function getStoreById(store_id) {
+    return db.prepare('SELECT * FROM stores WHERE store_id = ?').get(store_id);
 }
 
-async function createStore({ store_name, address, city, phone_number }) {
-    const result = await pool.query(`
+function createStore({ store_name, address, city, phone_number }) {
+    const info = db.prepare(`
         INSERT INTO stores (store_name, address, city, phone_number)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-    `, [store_name, address, city, phone_number]);
-    return result.rows[0];
+        VALUES (?, ?, ?, ?)
+    `).run(store_name, address, city, phone_number);
+    return getStoreById(info.lastInsertRowid);
 }
 
 // ============================================================
 // MEDICINES
 // ============================================================
 
-async function getMedicines({ category = null, search = null } = {}) {
+function getMedicines({ category = null, search = null } = {}) {
     if (category && search) {
-        const result = await pool.query(`
+        return db.prepare(`
             SELECT * FROM medicines
-            WHERE category = $1 AND name ILIKE $2
+            WHERE category = ? AND name LIKE ?
             ORDER BY name
-        `, [category, `%${search}%`]);
-        return result.rows;
+        `).all(category, `%${search}%`);
     }
     if (category) {
-        const result = await pool.query('SELECT * FROM medicines WHERE category = $1 ORDER BY name', [category]);
-        return result.rows;
+        return db.prepare('SELECT * FROM medicines WHERE category = ? ORDER BY name').all(category);
     }
     if (search) {
-        const result = await pool.query('SELECT * FROM medicines WHERE name ILIKE $1 ORDER BY name', [`%${search}%`]);
-        return result.rows;
+        return db.prepare('SELECT * FROM medicines WHERE name LIKE ? ORDER BY name').all(`%${search}%`);
     }
-    const result = await pool.query('SELECT * FROM medicines ORDER BY category, name');
-    return result.rows;
+    return db.prepare('SELECT * FROM medicines ORDER BY category, name').all();
 }
 
-async function getMedicineById(medicine_id) {
-    const result = await pool.query('SELECT * FROM medicines WHERE medicine_id = $1', [medicine_id]);
-    return result.rows[0] || null;
+function getMedicineById(medicine_id) {
+    return db.prepare('SELECT * FROM medicines WHERE medicine_id = ?').get(medicine_id);
 }
 
-async function createMedicine({ name, category, description, price, stock_quantity, image_url, prescription_required = 0 }) {
-    const result = await pool.query(`
+function createMedicine({ name, category, description, price, stock_quantity, image_url, prescription_required = 0 }) {
+    const info = db.prepare(`
         INSERT INTO medicines (name, category, description, price, stock_quantity, image_url, prescription_required)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-    `, [name, category, description, price, stock_quantity, image_url, prescription_required ? 1 : 0]);
-    return result.rows[0];
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(name, category, description, price, stock_quantity, image_url, prescription_required ? 1 : 0);
+    return getMedicineById(info.lastInsertRowid);
 }
 
-async function updateMedicineStock(medicine_id, quantity_delta) {
-    const result = await pool.query(`
+function updateMedicineStock(medicine_id, quantity_delta) {
+    db.prepare(`
         UPDATE medicines
-        SET stock_quantity = stock_quantity + $1
-        WHERE medicine_id = $2
-        RETURNING *
-    `, [quantity_delta, medicine_id]);
-    return result.rows[0] || null;
+        SET stock_quantity = stock_quantity + ?
+        WHERE medicine_id = ?
+    `).run(quantity_delta, medicine_id);
+    return getMedicineById(medicine_id);
 }
 
 // ============================================================
-// ORDERS  (with PostgreSQL transaction safety)
+// ORDERS  (with Node native sqlite transaction safety)
 // ============================================================
 
-async function createOrder(orderData, items) {
-    // Validate bounds first
+function createOrder(orderData, items) {
+    // Validate bounds manually
     let total = 0;
-    const resolvedItems = [];
-    
-    for (const item of items) {
-        const med = await getMedicineById(item.medicine_id);
+    const resolvedItems = items.map(item => {
+        const med = getMedicineById(item.medicine_id);
         if (!med) throw new Error(`Medicine ID ${item.medicine_id} not found.`);
         if (med.stock_quantity < item.quantity) {
             throw new Error(`Insufficient stock for "${med.name}". Available: ${med.stock_quantity}`);
         }
-        total += Number(med.price) * item.quantity;
-        resolvedItems.push({ ...item, price: med.price, name: med.name });
-    }
-
-    const client = await pool.connect();
+        total += med.price * item.quantity;
+        return { ...item, price: med.price, name: med.name };
+    });
 
     try {
-        await client.query('BEGIN');
+        db.exec('BEGIN EXCLUSIVE TRANSACTION');
 
-        const orderResult = await client.query(`
+        const orderInfo = db.prepare(`
             INSERT INTO orders (user_id, store_id, total_price, delivery_address)
-            VALUES ($1, $2, $3, $4)
-            RETURNING order_id
-        `, [orderData.user_id, orderData.store_id, total, orderData.delivery_address]);
+            VALUES (?, ?, ?, ?)
+        `).run(orderData.user_id, orderData.store_id, total, orderData.delivery_address);
 
-        const order_id = orderResult.rows[0].order_id;
+        const order_id = orderInfo.lastInsertRowid;
+
+        const insertItem = db.prepare(`
+            INSERT INTO order_items (order_id, medicine_id, quantity, price)
+            VALUES (?, ?, ?, ?)
+        `);
+        const deductStock = db.prepare(`
+            UPDATE medicines SET stock_quantity = stock_quantity - ? WHERE medicine_id = ?
+        `);
 
         for (const item of resolvedItems) {
-            await client.query(`
-                INSERT INTO order_items (order_id, medicine_id, quantity, price)
-                VALUES ($1, $2, $3, $4)
-            `, [order_id, item.medicine_id, item.quantity, item.price]);
-            
-            await client.query(`
-                UPDATE medicines SET stock_quantity = stock_quantity - $1 WHERE medicine_id = $2
-            `, [item.quantity, item.medicine_id]);
+            insertItem.run(order_id, item.medicine_id, item.quantity, item.price);
+            deductStock.run(item.quantity, item.medicine_id);
         }
 
-        await client.query('COMMIT');
-        return await getOrderById(order_id);
+        db.exec('COMMIT');
+        return getOrderById(order_id);
     } catch (err) {
-        await client.query('ROLLBACK');
+        db.exec('ROLLBACK');
         throw err;
-    } finally {
-        client.release();
     }
 }
 
-async function getOrderById(order_id) {
-    const orderResult = await pool.query('SELECT * FROM orders WHERE order_id = $1', [order_id]);
-    const order = orderResult.rows[0];
+function getOrderById(order_id) {
+    const order = db.prepare('SELECT * FROM orders WHERE order_id = ?').get(order_id);
     if (!order) return null;
-    
-    const itemsResult = await pool.query(`
+    order.items = db.prepare(`
         SELECT oi.*, m.name AS medicine_name, m.image_url
         FROM order_items oi
         JOIN medicines m ON oi.medicine_id = m.medicine_id
-        WHERE oi.order_id = $1
-    `, [order_id]);
-    
-    order.items = itemsResult.rows;
+        WHERE oi.order_id = ?
+    `).all(order_id);
     return order;
 }
 
-async function getOrdersByUser(user_id) {
-    const ordersResult = await pool.query(`
-        SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC
-    `, [user_id]);
-    
-    const orders = ordersResult.rows;
-    
-    for (const o of orders) {
-        const itemsResult = await pool.query(`
+function getOrdersByUser(user_id) {
+    const orders = db.prepare(`
+        SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC
+    `).all(user_id);
+    return orders.map(o => {
+        o.items = db.prepare(`
             SELECT oi.*, m.name AS medicine_name
             FROM order_items oi
             JOIN medicines m ON oi.medicine_id = m.medicine_id
-            WHERE oi.order_id = $1
-        `, [o.order_id]);
-        o.items = itemsResult.rows;
-    }
-    
-    return orders;
+            WHERE oi.order_id = ?
+        `).all(o.order_id);
+        return o;
+    });
 }
 
-async function updateOrderStatus(order_id, order_status) {
+function updateOrderStatus(order_id, order_status) {
     const valid = ['pending','confirmed','processing','shipped','delivered','cancelled'];
     if (!valid.includes(order_status)) throw new Error(`Invalid status: ${order_status}`);
-    
-    await pool.query('UPDATE orders SET order_status = $1 WHERE order_id = $2', [order_status, order_id]);
-    return await getOrderById(order_id);
+    db.prepare('UPDATE orders SET order_status = ? WHERE order_id = ?').run(order_status, order_id);
+    return getOrderById(order_id);
 }
 
 // ============================================================
@@ -290,7 +239,6 @@ async function updateOrderStatus(order_id, order_status) {
 // ============================================================
 module.exports = {
     initDatabase,
-    pool, // Export pool for cleanup if needed
 
     // Users
     createUser,
