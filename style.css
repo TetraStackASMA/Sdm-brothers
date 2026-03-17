@@ -1473,3 +1473,41 @@ body {
         padding: 1.5rem;
     }
 }
+
+/* Password Visibility Toggle */
+.password-field-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-field-wrapper input {
+    padding-right: 3rem !important; /* Ensure text doesn't go under the eye icon */
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 10;
+    opacity: 0.7;
+}
+
+.password-toggle:hover {
+    color: var(--primary);
+    opacity: 1;
+}
+
+.password-toggle:focus {
+    outline: none;
+}

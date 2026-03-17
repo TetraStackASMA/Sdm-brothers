@@ -16,7 +16,29 @@ function saveLocalUsers(users) {
     localStorage.setItem('sdm_users', JSON.stringify(users));
 }
 
+// Password Visibility Toggle Logic
+function initPasswordToggles() {
+    const toggles = document.querySelectorAll('.password-toggle');
+    toggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const input = toggle.parentElement.querySelector('input');
+            const icon = toggle.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    initPasswordToggles();
     
     // --- LOGIN / REGISTER PAGE LOGIC ---
     const tabLogin = document.getElementById('tab-login');
@@ -69,6 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = formData.get('name').trim();
             const address = formData.get('address').trim();
             const store = formData.get('storeLocation');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match. Please try again.');
+                return;
+            }
 
             try {
                 btn.textContent = 'Creating account...';
@@ -85,7 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     name,
                     phone,
                     address,
-                    preferred_store: store
+                    preferred_store: store,
+                    password: password // In a real app, this should be hashed
                 };
 
                 users.push(newUser);
@@ -109,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = formLogin.querySelector('button[type="submit"]');
             const originalText = btn.textContent;
             const phone = document.getElementById('loginPhone').value.trim();
+            const password = document.getElementById('loginPassword').value;
 
             try {
                 btn.textContent = 'Logging in...';
@@ -121,6 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!user) {
                     throw new Error('No account found. Please register first.');
                 }
+
+                // Password verification
+                if (user.password && user.password !== password) {
+                    throw new Error('Incorrect password. Please try again.');
+                }
+                
+                // If user doesn't have a password (legacy account), we'll allow first login
+                // but this case is handled by ensuring all new registrations have passwords.
 
                 // Success!
                 localStorage.setItem('sdm_user_profile', JSON.stringify(user));
@@ -159,10 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const inputs = [
-            document.getElementById('profileName'),
-            document.getElementById('profilePhone'),
             document.getElementById('profileAddress'),
-            document.getElementById('profileStore')
+            document.getElementById('profileStore'),
+            document.getElementById('profilePassword')
         ];
         
         const saveActions = document.getElementById('save-actions');
@@ -194,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('profilePhone').value = savedProfile.phone;
             document.getElementById('profileAddress').value = savedProfile.address;
             document.getElementById('profileStore').value = savedProfile.preferred_store || savedProfile.storeLocation || '';
+            document.getElementById('profilePassword').value = savedProfile.password || '';
         }
 
         loadProfileData();
@@ -213,7 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const updatedData = {
                 name: document.getElementById('profileName').value.trim(),
                 address: document.getElementById('profileAddress').value.trim(),
-                preferred_store: document.getElementById('profileStore').value
+                preferred_store: document.getElementById('profileStore').value,
+                password: document.getElementById('profilePassword').value
             };
 
             try {
